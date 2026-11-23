@@ -32,10 +32,10 @@ A caller that must refuse such keys checks the key itself. A caller that verifie
 
 ## Usage
 
-Add the release to the header of your app, package or platform (the URL is known after the first release):
+Add the release to the header of your app, package or platform:
 
 ```roc
-ed: "https://github.com/Karakatiza666/roc-ed25519/releases/download/0.1.0/<hash>.tar.zst",
+ed: "https://github.com/Karakatiza666/roc-ed25519/releases/download/0.1.0/HrAdxCQXofHbDHhgxv6qywS5hozKum4dpEu3dn34h8op.tar.zst",
 ```
 
 Then:
