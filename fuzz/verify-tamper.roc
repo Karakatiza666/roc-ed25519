@@ -37,12 +37,15 @@ Input := { part : U8, pos : U64, bit : U8 }.{
 }
 
 flip_bit : List(U8), U64, U8 -> List(U8)
-flip_bit = |bytes, i, bit| bytes.map_with_index(|b, j| if (j == i % bytes.len()) b.bitwise_xor([1, 2, 4, 8, 16, 32, 64, 128].get(bit.to_u64()) ?? 0) else b)
+flip_bit = |bytes, i, bit| bytes.map_with_index(|b, j| if (j == i % bytes.len()) b.bitwise_xor([1, 2, 4, 8, 16, 32, 64, 128].get((bit % 8).to_u64()) ?? 0) else b)
 
 ## RFC 8032 5.1.7, Go crypto/ed25519: one changed bit in the key, the message or the signature of a valid vector gives Bool.False.
 test : Input -> Fuzz.Outcome
 test = |input| {
-	args = match input.part {
+	# The fuzzer decodes inputs that the generator does not make (a corpus input can hold any U8), so `part` and `bit` are taken
+	# mod 3 and mod 8 here. Before this, the CI finding { bit: 247, part: 39, pos: 0 } changed no bit (the table has no index 247),
+	# and the unchanged vector verified, as it must (a wrong property, not a code bug; the example "out-of-range-fields" keeps it).
+	args = match input.part % 3 {
 		0 => { public_key: flip_bit(pk3, input.pos, input.bit), message: msg3, signature: sig3 }
 		1 => { public_key: pk3, message: flip_bit(msg3, input.pos, input.bit), signature: sig3 }
 		_ => { public_key: pk3, message: msg3, signature: flip_bit(sig3, input.pos, input.bit) }
@@ -52,7 +55,10 @@ test = |input| {
 
 target = Fuzz.target_with({
 	name: "verify-tamper",
-	examples: [Fuzz.example({ name: "first-key-bit", revision: "1", make: || { part: 0, pos: 0, bit: 0 } })],
+	examples: [
+		Fuzz.example({ name: "first-key-bit", revision: "1", make: || { part: 0, pos: 0, bit: 0 } }),
+		Fuzz.example({ name: "out-of-range-fields", revision: "1", make: || { part: 39, pos: 0, bit: 247 } }),
+	],
 	generator: Input.generator_for(Default),
 	test,
 	show: |input| Str.inspect(input),

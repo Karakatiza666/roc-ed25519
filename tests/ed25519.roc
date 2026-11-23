@@ -125,6 +125,13 @@ expect !v(pk2, msg3, sig2)
 # SIG: each of the 16 bits of the message of TEST 3 changed, one at a time
 expect U64.until(0, 16).fold(Bool.True, |ok, i| ok and !v(pk3, flip_bit(msg3, i // 8, i % 8), sig3))
 
+# SIG: each of the 256 bits of the public key of TEST 3 changed, one at a time (node:crypto rejects each one, Talon
+# research/slice-261a-revert/flips.mjs; the L0 form of fuzz/verify-tamper.roc)
+expect U64.until(0, 256).fold(Bool.True, |ok, i| ok and !v(flip_bit(pk3, i // 8, i % 8), msg3, sig3))
+
+# SIG: each of the 512 bits of the signature of TEST 3 changed, one at a time (the same source)
+expect U64.until(0, 512).fold(Bool.True, |ok, i| ok and !v(pk3, msg3, flip_bit(sig3, i // 8, i % 8)))
+
 # LEN: a signature of 63 bytes
 expect !v(pk1, [], sig1.drop_last(1))
 
